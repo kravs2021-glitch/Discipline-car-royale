@@ -113,6 +113,9 @@ fun RoyaleRootEntry(
 
     BackHandler {
         when {
+            chestReward != null -> royaleViewModel.closeChestRewardModal()
+            selectedMatch != null -> royaleViewModel.closeMatchDetail()
+            matchmaking != null -> royaleViewModel.cancelMatchmaking()
             selectedCardId != null -> royaleViewModel.closeCardDetail()
             activeModal != RoyaleModal.NONE -> royaleViewModel.closeModal()
             activeTab != RoyaleNavTab.BATTLE -> royaleViewModel.selectTab(RoyaleNavTab.BATTLE)

@@ -2,6 +2,6 @@
     <string name="app_name">Exame &amp; Drift</string>
     <string name="cover_art_description">Capa oficial do jogo com rei dirigindo carro esportivo sobre torre real</string>
     <string name="cover_title_badge">CAR &amp; ARENA ROYALE</string>
-    <string name="cover_loading_label">CARREGANDO...</string>
+    <string name="cover_loading_label">CARREGANDO…</string>
     <string name="cover_tap_to_enter">Toque para entrar</string>
 </resources>

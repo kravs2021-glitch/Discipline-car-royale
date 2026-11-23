@@ -22,31 +22,23 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Configurar Android SDK 36.1 e aceitar licenças
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools build-tools;36.0.0 platforms;android-36'
+
+      - name: Garantir Android SDK 36.1 e licenças aceitas
         shell: bash
         run: |
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> "$GITHUB_ENV"
-
           SDKMANAGER=$(find "$SDK_DIR/cmdline-tools" -name sdkmanager -type f 2>/dev/null | head -n 1)
           if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER=$(command -v sdkmanager || true)
+            SDKMANAGER=$(command -v sdkmanager)
           fi
-          echo "Using sdkmanager: $SDKMANAGER"
-
           set +o pipefail
           yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --sdk_root="$SDK_DIR" "cmdline-tools;latest" >/dev/null 2>&1 || true
-
-          LATEST_SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
-          if [ -x "$LATEST_SDKMANAGER" ]; then
-            SDKMANAGER="$LATEST_SDKMANAGER"
-          fi
-
-          yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --sdk_root="$SDK_DIR" "platform-tools" "build-tools;36.0.0" "platforms;android-36"
           "$SDKMANAGER" --sdk_root="$SDK_DIR" "platforms;android-36.1" || true
+          ls -la "$SDK_DIR/platforms" "$SDK_DIR/build-tools"
 
       - name: Preparar keystore de assinatura e arquivo .env
         run: |
@@ -56,15 +48,16 @@ jobs:
           if [ ! -f .env ]; then
             touch .env
           fi
-          ls -la debug.keystore .env
 
       - name: Configurar Gradle 9.3.1
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
 
       - name: Compilar APK (Debug)
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: |
+          gradle --version
+          gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace
 
       - name: Disponibilizar APK nos Artifacts do Actions
         uses: actions/upload-artifact@v4

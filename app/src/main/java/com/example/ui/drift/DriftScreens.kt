@@ -10,14 +10,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -757,7 +760,8 @@ private fun DriftRaceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(12.dp),
+                .statusBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -936,7 +940,8 @@ private fun DriftRaceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(12.dp),
+                .navigationBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Telemetry Strip
@@ -1017,86 +1022,97 @@ private fun DriftRaceScreen(
                 }
             }
 
-            // Arcade Multi-Touch Controls
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Steering Left & Right
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    HoldControlButton(
-                        label = "◀",
-                        bgColor = CarbonBlack.copy(alpha = 0.85f),
-                        borderColor = CarbonBorder,
-                        onPressChange = { input.steerLeft = it },
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Virar à esquerda",
-                            tint = CarbonText,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                    HoldControlButton(
-                        label = "▶",
-                        bgColor = CarbonBlack.copy(alpha = 0.85f),
-                        borderColor = CarbonBorder,
-                        onPressChange = { input.steerRight = it },
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Virar à direita",
-                            tint = CarbonText,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
+            // Arcade Multi-Touch Controls (responsive for narrow portrait & landscape widths)
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isCompactWidth = maxWidth < 430.dp
+                val steerSize = if (isCompactWidth) 52.dp else 64.dp
+                val controlHeight = if (isCompactWidth) 58.dp else 64.dp
+                val brakeWidth = if (isCompactWidth) 48.dp else 56.dp
+                val driftWidth = if (isCompactWidth) 54.dp else 64.dp
+                val nitroWidth = if (isCompactWidth) 50.dp else 60.dp
+                val gasWidth = if (isCompactWidth) 62.dp else 76.dp
+                val groupGap = if (isCompactWidth) 5.dp else 8.dp
 
-                // Pedals: Brake, Drift, Nitro, Accelerate
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HoldControlButton(
-                        label = "FREIO",
-                        bgColor = CarbonBlack.copy(alpha = 0.85f),
-                        borderColor = CarbonBorder,
-                        onPressChange = { input.brake = it },
-                        modifier = Modifier.size(width = 56.dp, height = 64.dp)
-                    ) {
-                        Text("RÉ", style = MaterialTheme.typography.labelSmall, color = CarbonSubtext)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Steering Left & Right
+                    Row(horizontalArrangement = Arrangement.spacedBy(groupGap)) {
+                        HoldControlButton(
+                            label = "◀",
+                            bgColor = CarbonBlack.copy(alpha = 0.85f),
+                            borderColor = CarbonBorder,
+                            onPressChange = { input.steerLeft = it },
+                            modifier = Modifier.size(width = steerSize, height = controlHeight)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = "Virar à esquerda",
+                                tint = CarbonText,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        HoldControlButton(
+                            label = "▶",
+                            bgColor = CarbonBlack.copy(alpha = 0.85f),
+                            borderColor = CarbonBorder,
+                            onPressChange = { input.steerRight = it },
+                            modifier = Modifier.size(width = steerSize, height = controlHeight)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Virar à direita",
+                                tint = CarbonText,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     }
-                    HoldControlButton(
-                        label = "DRIFT",
-                        bgColor = AmberExempt.copy(alpha = 0.88f),
-                        borderColor = DriftGold,
-                        onPressChange = { input.handbrake = it },
-                        modifier = Modifier.size(width = 64.dp, height = 64.dp)
-                    ) {
-                        Text("DRIFT", style = MaterialTheme.typography.labelSmall, color = CarbonBlack)
-                    }
-                    HoldControlButton(
-                        label = "NITRO",
-                        bgColor = DriftNitroSky.copy(alpha = 0.88f),
-                        borderColor = Color.White.copy(alpha = 0.6f),
-                        onPressChange = { input.boost = it },
-                        modifier = Modifier.size(width = 60.dp, height = 64.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = "Nitro",
-                            tint = CarbonBlack,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    HoldControlButton(
-                        label = "ACELERAR",
-                        bgColor = DriftCrimson.copy(alpha = 0.92f),
-                        borderColor = Color.White.copy(alpha = 0.5f),
-                        onPressChange = { input.throttle = it },
-                        modifier = Modifier.size(width = 76.dp, height = 64.dp)
-                    ) {
-                        Text("GÁS", style = MaterialTheme.typography.labelLarge, color = CarbonText)
+
+                    // Pedals: Brake, Drift, Nitro, Accelerate
+                    Row(horizontalArrangement = Arrangement.spacedBy(groupGap)) {
+                        HoldControlButton(
+                            label = "FREIO",
+                            bgColor = CarbonBlack.copy(alpha = 0.85f),
+                            borderColor = CarbonBorder,
+                            onPressChange = { input.brake = it },
+                            modifier = Modifier.size(width = brakeWidth, height = controlHeight)
+                        ) {
+                            Text("RÉ", style = MaterialTheme.typography.labelSmall, color = CarbonSubtext)
+                        }
+                        HoldControlButton(
+                            label = "DRIFT",
+                            bgColor = AmberExempt.copy(alpha = 0.88f),
+                            borderColor = DriftGold,
+                            onPressChange = { input.handbrake = it },
+                            modifier = Modifier.size(width = driftWidth, height = controlHeight)
+                        ) {
+                            Text("DRIFT", style = MaterialTheme.typography.labelSmall, color = CarbonBlack)
+                        }
+                        HoldControlButton(
+                            label = "NITRO",
+                            bgColor = DriftNitroSky.copy(alpha = 0.88f),
+                            borderColor = Color.White.copy(alpha = 0.6f),
+                            onPressChange = { input.boost = it },
+                            modifier = Modifier.size(width = nitroWidth, height = controlHeight)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = "Nitro",
+                                tint = CarbonBlack,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        HoldControlButton(
+                            label = "ACELERAR",
+                            bgColor = DriftCrimson.copy(alpha = 0.92f),
+                            borderColor = Color.White.copy(alpha = 0.5f),
+                            onPressChange = { input.throttle = it },
+                            modifier = Modifier.size(width = gasWidth, height = controlHeight)
+                        ) {
+                            Text("GÁS", style = MaterialTheme.typography.labelLarge, color = CarbonText)
+                        }
                     }
                 }
             }
@@ -1115,6 +1131,12 @@ private fun HoldControlButton(
     content: @Composable () -> Unit
 ) {
     var pressed by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose {
+            pressed = false
+            onPressChange(false)
+        }
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
@@ -1130,7 +1152,7 @@ private fun HoldControlButton(
                         pressed = true
                         onPressChange(true)
                     }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_OUTSIDE -> {
                         pressed = false
                         onPressChange(false)
                     }

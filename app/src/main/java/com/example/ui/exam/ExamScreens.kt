@@ -31,7 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
@@ -50,7 +49,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -68,12 +66,10 @@ import com.example.ui.ExamUiState
 import com.example.ui.theme.AmberExempt
 import com.example.ui.theme.CarbonBlack
 import com.example.ui.theme.CarbonBorder
-import com.example.ui.theme.CarbonCard
 import com.example.ui.theme.CarbonMuted
 import com.example.ui.theme.CarbonSubtext
 import com.example.ui.theme.CarbonSurface
 import com.example.ui.theme.CarbonText
-import com.example.ui.theme.DriftCrimson
 import com.example.ui.theme.EmeraldMogger
 import com.example.ui.theme.JetBrainsMonoFamily
 import com.example.ui.theme.RoseMogged
@@ -88,7 +84,6 @@ fun ExamRootScreen(
     onPreviousQuestion: () -> Unit,
     onCancelExam: () -> Unit,
     onOpenHistory: () -> Unit,
-    onOpenDrift: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedContent(
@@ -100,8 +95,7 @@ fun ExamRootScreen(
             ExamStage.WELCOME -> ExamWelcomeView(
                 summary = summary,
                 onStartExam = onStartExam,
-                onOpenHistory = onOpenHistory,
-                onOpenDrift = onOpenDrift
+                onOpenHistory = onOpenHistory
             )
             ExamStage.QUESTION -> {
                 val question = HabitCatalog.questions.getOrNull(examUi.currentQuestionIndex)
@@ -137,8 +131,7 @@ fun ExamRootScreen(
 private fun ExamWelcomeView(
     summary: EvolutionSummary,
     onStartExam: () -> Unit,
-    onOpenHistory: () -> Unit,
-    onOpenDrift: () -> Unit
+    onOpenHistory: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -312,81 +305,6 @@ private fun ExamWelcomeView(
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Drift Masters 3D Promo Card
-        Surface(
-            onClick = onOpenDrift,
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, DriftCrimson.copy(alpha = 0.45f)),
-            color = CarbonCard,
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 540.dp)
-                .testTag("open_drift_card")
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                DriftCrimson.copy(alpha = 0.16f),
-                                CarbonCard
-                            )
-                        )
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(DriftCrimson.copy(alpha = 0.2f))
-                                .border(1.dp, DriftCrimson.copy(alpha = 0.5f), RoundedCornerShape(6.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = "Drift Masters 3D",
-                                tint = DriftCrimson
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "DRIFT MASTERS 3D",
-                                fontFamily = SpaceGroteskFamily,
-                                fontWeight = FontWeight.Black,
-                                fontSize = 15.sp,
-                                color = CarbonText
-                            )
-                            Text(
-                                text = "5 circuitos, garagem 3D, bots e modo fantasma",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = CarbonSubtext,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Abrir Drift Masters 3D",
-                        tint = DriftCrimson
-                    )
                 }
             }
         }

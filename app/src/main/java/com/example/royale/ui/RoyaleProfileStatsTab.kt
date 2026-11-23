@@ -194,7 +194,7 @@ fun RoyaleProfileStatsTab(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "VOLTAR PARA EXAME DE DISCIPLINA / DRIFT 3D",
+                        text = "VOLTAR PARA EXAME DE DISCIPLINA / CAR",
                         color = Color(0xFFE2E8F0),
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Bold,

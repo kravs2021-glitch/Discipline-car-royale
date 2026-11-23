@@ -6,17 +6,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -30,6 +44,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -38,12 +53,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.drift.DriftRaceStatus
@@ -62,7 +86,10 @@ import com.example.ui.theme.CarbonText
 import com.example.ui.theme.DisciplinaDriftTheme
 import com.example.ui.theme.DriftCrimson
 import com.example.ui.theme.DriftGold
+import com.example.ui.theme.DriftNitroSky
 import com.example.ui.theme.EmeraldMogger
+import com.example.ui.theme.JetBrainsMonoFamily
+import com.example.ui.theme.SpaceGroteskFamily
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,87 +111,226 @@ fun DisciplinaDriftApp(
     viewModel: MainViewModel = viewModel()
 ) {
     val activeTab by viewModel.activeTab.collectAsStateWithLifecycle()
+    val showGameCover by viewModel.showGameCover.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
     val summary by viewModel.evolutionSummary.collectAsStateWithLifecycle()
     val examUi by viewModel.examUi.collectAsStateWithLifecycle()
     val driftPrefs by viewModel.driftPrefs.collectAsStateWithLifecycle()
     val driftSession by viewModel.driftSession.collectAsStateWithLifecycle()
 
-    if (activeTab == MainTab.ROYALE) {
-        RoyaleRootEntry(
-            onExitRoyaleToSuite = { viewModel.selectTab(MainTab.EXAM) }
-        )
-        return
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (activeTab == MainTab.ROYALE) {
+            RoyaleRootEntry(
+                onExitRoyaleToSuite = { viewModel.selectTab(MainTab.EXAM) }
+            )
+        } else {
+            val isFullScreenRace = activeTab == MainTab.DRIFT &&
+                (driftSession.status == DriftRaceStatus.COUNTDOWN || driftSession.status == DriftRaceStatus.RACING)
 
-    val isFullScreenRace = activeTab == MainTab.DRIFT &&
-        (driftSession.status == DriftRaceStatus.COUNTDOWN || driftSession.status == DriftRaceStatus.RACING)
-
-    Scaffold(
-        containerColor = CarbonBlack,
-        contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = {
-            if (!isFullScreenRace) {
-                TopHeaderBar(
-                    activeTab = activeTab,
-                    onQuickNewExam = { viewModel.startExam() },
-                    onLogoClick = { viewModel.resetExamToWelcome() }
-                )
-            }
-        },
-        bottomBar = {
-            if (!isFullScreenRace) {
-                BottomMainNavBar(
-                    activeTab = activeTab,
-                    historyCount = history.size,
-                    onSelectTab = { viewModel.selectTab(it) }
-                )
+            Scaffold(
+                containerColor = CarbonBlack,
+                contentWindowInsets = WindowInsets.safeDrawing,
+                topBar = {
+                    if (!isFullScreenRace) {
+                        TopHeaderBar(
+                            activeTab = activeTab,
+                            onQuickNewExam = { viewModel.startExam() },
+                            onLogoClick = { viewModel.resetExamToWelcome() }
+                        )
+                    }
+                },
+                bottomBar = {
+                    if (!isFullScreenRace) {
+                        BottomMainNavBar(
+                            activeTab = activeTab,
+                            historyCount = history.size,
+                            onSelectTab = { viewModel.selectTab(it) }
+                        )
+                    }
+                }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .background(CarbonBlack)
+                ) {
+                    when (activeTab) {
+                        MainTab.EXAM -> ExamRootScreen(
+                            examUi = examUi,
+                            summary = summary,
+                            onStartExam = { viewModel.startExam() },
+                            onSelectOption = { qId, optId -> viewModel.selectOption(qId, optId) },
+                            onPreviousQuestion = { viewModel.previousQuestion() },
+                            onCancelExam = { viewModel.resetExamToWelcome() },
+                            onOpenHistory = { viewModel.selectTab(MainTab.HISTORY) }
+                        )
+                        MainTab.HISTORY -> HistoryScreen(
+                            entries = history,
+                            summary = summary,
+                            onDeleteEntry = { viewModel.deleteHistoryEntry(it) },
+                            onClearHistory = { viewModel.clearAllHistory() },
+                            onStartExam = { viewModel.startExam() },
+                            onBackToExam = { viewModel.selectTab(MainTab.EXAM) }
+                        )
+                        MainTab.DRIFT -> DriftRootScreen(
+                            prefs = driftPrefs,
+                            session = driftSession,
+                            onUpdatePilotName = { viewModel.updatePilotName(it) },
+                            onUpdateCarColor = { viewModel.updateCarColor(it) },
+                            onUpdateCarStyle = { viewModel.updateCarStyle(it) },
+                            onUpdateTrack = { viewModel.updateSelectedTrack(it) },
+                            onUpdateBotCount = { viewModel.updateBotCount(it) },
+                            onSubmitCheatCode = { viewModel.submitCheatCode(it) },
+                            onClearCheatError = { viewModel.clearCheatError() },
+                            onStartFreeRoam = { viewModel.startDriftRace(isCompetitive = false) },
+                            onStartCompetitive = { viewModel.startDriftRace(isCompetitive = true) },
+                            onStartGhostMatch = { viewModel.startGhostMatch() },
+                            onFinishRace = { score, frames -> viewModel.finishDriftRace(score, frames) },
+                            onLeaveRaceToLobby = { viewModel.leaveDriftToLobby() },
+                            onBackToExam = { viewModel.selectTab(MainTab.EXAM) }
+                        )
+                        MainTab.ROYALE -> Unit
+                    }
+                }
             }
         }
-    ) { innerPadding ->
-        Box(
+
+        AnimatedVisibility(
+            visible = showGameCover,
+            exit = fadeOut(animationSpec = tween(durationMillis = 320))
+        ) {
+            GameCoverOverlay(
+                onDismiss = { viewModel.dismissGameCover() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun GameCoverOverlay(
+    onDismiss: () -> Unit
+) {
+    val progress = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        progress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing)
+        )
+        onDismiss()
+    }
+
+    val skyGradient = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF156EEB),
+            Color(0xFF0E3A8A),
+            Color(0xFF071128)
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(skyGradient)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss
+            )
+            .testTag("game_cover_overlay"),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(CarbonBlack)
+                .widthIn(max = 520.dp)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            when (activeTab) {
-                MainTab.EXAM -> ExamRootScreen(
-                    examUi = examUi,
-                    summary = summary,
-                    onStartExam = { viewModel.startExam() },
-                    onSelectOption = { qId, optId -> viewModel.selectOption(qId, optId) },
-                    onPreviousQuestion = { viewModel.previousQuestion() },
-                    onCancelExam = { viewModel.resetExamToWelcome() },
-                    onOpenHistory = { viewModel.selectTab(MainTab.HISTORY) },
-                    onOpenDrift = { viewModel.selectTab(MainTab.DRIFT) }
+            Surface(
+                color = Color(0xCC091326),
+                shape = RoundedCornerShape(999.dp),
+                border = BorderStroke(1.5.dp, DriftGold)
+            ) {
+                Text(
+                    text = stringResource(R.string.cover_title_badge),
+                    color = DriftGold,
+                    fontFamily = JetBrainsMonoFamily,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.2.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
                 )
-                MainTab.HISTORY -> HistoryScreen(
-                    entries = history,
-                    summary = summary,
-                    onDeleteEntry = { viewModel.deleteHistoryEntry(it) },
-                    onClearHistory = { viewModel.clearAllHistory() },
-                    onStartExam = { viewModel.startExam() },
-                    onBackToExam = { viewModel.selectTab(MainTab.EXAM) }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                border = BorderStroke(3.dp, DriftGold),
+                shadowElevation = 20.dp,
+                color = Color(0xFF156EEB),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .padding(vertical = 18.dp)
+                    .aspectRatio(1f)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.game_cover_art),
+                    contentDescription = stringResource(R.string.cover_art_description),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(26.dp))
                 )
-                MainTab.DRIFT -> DriftRootScreen(
-                    prefs = driftPrefs,
-                    session = driftSession,
-                    onUpdatePilotName = { viewModel.updatePilotName(it) },
-                    onUpdateCarColor = { viewModel.updateCarColor(it) },
-                    onUpdateCarStyle = { viewModel.updateCarStyle(it) },
-                    onUpdateTrack = { viewModel.updateSelectedTrack(it) },
-                    onUpdateBotCount = { viewModel.updateBotCount(it) },
-                    onSubmitCheatCode = { viewModel.submitCheatCode(it) },
-                    onClearCheatError = { viewModel.clearCheatError() },
-                    onStartFreeRoam = { viewModel.startDriftRace(isCompetitive = false) },
-                    onStartCompetitive = { viewModel.startDriftRace(isCompetitive = true) },
-                    onStartGhostMatch = { viewModel.startGhostMatch() },
-                    onFinishRace = { score, frames -> viewModel.finishDriftRace(score, frames) },
-                    onLeaveRaceToLobby = { viewModel.leaveDriftToLobby() },
-                    onBackToExam = { viewModel.selectTab(MainTab.EXAM) }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.cover_loading_label),
+                        color = Color.White,
+                        fontFamily = JetBrainsMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = "${(progress.value * 100).toInt()}%",
+                        color = DriftGold,
+                        fontFamily = JetBrainsMonoFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp
+                    )
+                }
+
+                LinearProgressIndicator(
+                    progress = { progress.value },
+                    color = DriftGold,
+                    trackColor = Color(0x55000000),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(6.dp))
                 )
-                MainTab.ROYALE -> Unit
+
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.cover_tap_to_enter),
+                    color = DriftNitroSky,
+                    fontFamily = SpaceGroteskFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp
+                )
             }
         }
     }
@@ -194,7 +360,7 @@ private fun TopHeaderBar(
                 color = CarbonBlack
             ) {
                 Text(
-                    text = if (activeTab == MainTab.DRIFT) "DRIFT MASTERS 3D" else "EXAME DE DISCIPLINA",
+                    text = if (activeTab == MainTab.DRIFT) "CAR" else "EXAME DE DISCIPLINA",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                     color = CarbonText
                 )
@@ -305,10 +471,10 @@ private fun BottomMainNavBar(
             icon = {
                 Icon(
                     imageVector = if (activeTab == MainTab.DRIFT) Icons.Filled.DirectionsCar else Icons.Outlined.DirectionsCar,
-                    contentDescription = "Drift Masters 3D"
+                    contentDescription = "Car"
                 )
             },
-            label = { Text("Drift 3D", style = MaterialTheme.typography.labelSmall) },
+            label = { Text("Car", style = MaterialTheme.typography.labelSmall) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = CarbonText,
                 selectedTextColor = CarbonText,

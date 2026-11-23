@@ -88,7 +88,8 @@ class RoyaleEngineTest {
                         if (kIdx >= 0) {
                             knightPlayed = engine.playCard(kIdx, 4.0f, 22.0f)
                         } else {
-                            engine.playCard(0, 4.0f, 22.0f)
+                            val fillerIdx = snap.handCardIds.indexOfFirst { it != "espelho" }
+                            if (fillerIdx >= 0) engine.playCard(fillerIdx, 4.0f, 22.0f)
                         }
                     } else if (!mirrorPlayed) {
                         val mIdx = snap.handCardIds.indexOf("espelho")

@@ -67,6 +67,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeTab = MutableStateFlow(MainTab.EXAM)
     val activeTab: StateFlow<MainTab> = _activeTab.asStateFlow()
 
+    private val _showGameCover = MutableStateFlow(true)
+    val showGameCover: StateFlow<Boolean> = _showGameCover.asStateFlow()
+
     val history: StateFlow<List<HistoryEntry>> = repository.historyStream
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -88,6 +91,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectTab(tab: MainTab) {
         _activeTab.value = tab
+    }
+
+    fun dismissGameCover() {
+        _showGameCover.value = false
     }
 
     fun startExam() {

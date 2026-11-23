@@ -256,7 +256,7 @@ private fun DriftLobbyScreen(
                     }
                     Column {
                         Text(
-                            text = "DRIFT MASTERS 3D",
+                            text = "CAR",
                             fontFamily = SpaceGroteskFamily,
                             fontWeight = FontWeight.Black,
                             fontSize = 18.sp,

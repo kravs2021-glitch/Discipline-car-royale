@@ -25,39 +25,59 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: 'platform-tools build-tools;36.0.0 platforms;android-36'
+          packages: 'cmdline-tools;latest platform-tools build-tools;36.0.0 platforms;android-36'
 
-      - name: Garantir Android SDK 36.1 e licenças aceitas
+      - name: Instalar Android SDK 36.1 e aceitar licenças
         shell: bash
         run: |
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER=$(find "$SDK_DIR/cmdline-tools" -name sdkmanager -type f 2>/dev/null | head -n 1)
+          SDKMANAGER=$(find "$SDK_DIR/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort -r | head -n 1)
           if [ -z "$SDKMANAGER" ]; then
             SDKMANAGER=$(command -v sdkmanager)
           fi
+          echo "Using sdkmanager: $SDKMANAGER"
           set +o pipefail
           yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --sdk_root="$SDK_DIR" "platforms;android-36.1" || true
+          yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" "platforms;android-36.1"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" --licenses >/dev/null 2>&1 || true
           ls -la "$SDK_DIR/platforms" "$SDK_DIR/build-tools"
 
       - name: Preparar keystore de assinatura e arquivo .env
+        shell: bash
         run: |
           if [ ! -f debug.keystore ] && [ -f debug.keystore.base64 ]; then
             base64 -d debug.keystore.base64 > debug.keystore
           fi
+          keytool -list -keystore debug.keystore -storepass android -alias androiddebugkey >/dev/null
           if [ ! -f .env ]; then
             touch .env
           fi
 
       - name: Configurar Gradle 9.3.1
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
 
       - name: Compilar APK (Debug)
+        shell: bash
         run: |
+          set -o pipefail
           gradle --version
-          gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace
+          if ! gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace --console=plain 2>&1 | tee gradle-build.log; then
+            echo "### Erro do Gradle" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -A 25 "FAILURE: Build failed with an exception." gradle-build.log | head -n 30 >> "$GITHUB_STEP_SUMMARY" || tail -n 40 gradle-build.log >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Enviar log de erro se a compilação falhar
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: ignore
 
       - name: Disponibilizar APK nos Artifacts do Actions
         uses: actions/upload-artifact@v4
